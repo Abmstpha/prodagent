@@ -1,9 +1,12 @@
 # prodagent — renewable-energy research agent
 
 A production-ready research agent over a renewable-energy corpus (solar · wind · hydro):
-hybrid RAG + cross-encoder reranking, L1/L4 security guardrails, token budget,
-few-shot CoT with Self-Consistency k=3, a critic agent, an MCP server (stdio + HTTP),
-a FastAPI backend and a React TS frontend.
+hybrid RAG (BM25 + Pinecone dense + RRF) + cross-encoder reranking, L1/L4 security
+guardrails, token budget, few-shot CoT with Self-Consistency k=3, a critic agent, an
+MCP server (stdio + HTTP), LangSmith tracing, a FastAPI backend and a React TS frontend.
+
+**Live:** [prodagent-frontend.onrender.com](https://prodagent-frontend.onrender.com) ·
+API + MCP at [prodagent-backend.onrender.com](https://prodagent-backend.onrender.com/health)
 
 > ⚠️ Transparency (EU AI Act, limited risk): every response is produced by an AI system.
 
@@ -103,16 +106,28 @@ Inspector: `npx @modelcontextprotocol/inspector python -m src.mcp_server`
 | Item | Price |
 |---|---|
 | mistral-large-latest | $2.00 / M input tokens · $6.00 / M output tokens |
-| Typical run (loop + k=3 synthesis + critic) | ≈ $0.03 |
+| Typical run (loop + k=3 synthesis + critic) | ≈ $0.02–0.03 |
+| Pinecone (serverless, integrated embeddings) + Tavily + LangSmith | free tiers |
 | Hard cap per run (`TokenBudget`) | $2.00 — the run raises and stops at the cap |
 | Warning threshold | 25% of the cap, printed after the crossing call |
 | Per-tool quotas | search_knowledge ≤ 5 · web_search ≤ 3 per run |
 
 ## Deployment (Render)
 
-`render.yaml` is a Render Blueprint: one Python web service (backend + MCP) and one
-static site (frontend). Create a Blueprint on render.com pointing at this repo, then
-set `MISTRAL_API_KEY`, `TAVILY_API_KEY`, `MCP_API_KEY` in the backend service.
+Deployed as two Render services (created via Render's MCP server): the Python web
+service `prodagent-backend` (REST + MCP) and the static site `prodagent-frontend`.
+Pushes to `main` auto-deploy. `render.yaml` documents the same setup as a Blueprint
+for reproduction; secrets (`MISTRAL_API_KEY`, `TAVILY_API_KEY`, `MCP_API_KEY`,
+`PINECONE_API_KEY`, `LANGSMITH_*`) are set as service env vars, never committed.
+
+## Observability
+
+- **LangSmith**: every run traces as `renewable_research_agent` with child spans per
+  tool call (`search_knowledge`, `web_search`, …), per reasoning voice (k=3) and the
+  critic verdict. Enable with `LANGSMITH_TRACING=true` + key/project env vars.
+- **/metrics**: cost per run, per-tool error rate and latency, budget alerts.
+- **Versioning**: `/health` returns sha256 hashes of both system prompts — a changed
+  hash marks a behaviour change in every log entry.
 
 ## CI
 

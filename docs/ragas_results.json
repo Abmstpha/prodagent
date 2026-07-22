@@ -1,0 +1,17 @@
+{
+  "baseline": {
+    "context_recall": 1.0,
+    "llm_context_precision_with_reference": 0.778,
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.939
+  },
+  "improved": {
+    "context_recall": 1.0,
+    "llm_context_precision_with_reference": 0.8,
+    "faithfulness": 0.876,
+    "answer_relevancy": 0.952
+  },
+  "n_questions": 5,
+  "judge": "mistral-large-latest",
+  "embeddings": "mistral-embed"
+}

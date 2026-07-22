@@ -19,9 +19,13 @@ See [docs/architecture.md](docs/architecture.md) for the diagram and PEAS.
 
 Pipeline: L1 input filter → agent loop (max 6 steps, L4-gated tools, sanitised
 results, $2 hard budget) → Self-Consistency k=3 synthesis (few-shot CoT) → critic
-verdict → response. Components: hybrid retriever (BM25 + TF-IDF dense + RRF,
-parent-child chunks, cross-encoder rerank), 4 agent tools, MCP server (stdio + HTTP),
-FastAPI backend, React TS frontend, GitHub Actions CI, Render deployment.
+verdict → response. Components: hybrid retriever (BM25 + dense + RRF over parent-child
+chunks, cross-encoder rerank; the dense leg is a Pinecone serverless index with
+integrated llama-text-embed-v2 embeddings in deployment, with a local TF-IDF fallback
+offline), 4 agent tools, MCP server (stdio + streamable HTTP with API key), LangSmith
+tracing (per-tool and per-voice spans), FastAPI backend, React TS frontend, GitHub
+Actions CI, Render deployment (backend + frontend, auto-deploy on push).
+Live: https://prodagent-frontend.onrender.com · https://prodagent-backend.onrender.com
 
 Non-obvious design decision: Self-Consistency votes on **meaning, not wording** —
 conclusions are clustered by token-overlap before the majority vote, because Lab 3
@@ -35,10 +39,18 @@ Baseline = TF-IDF top-3 + direct answer. Improved = hybrid+RRF+rerank + few-shot
 
 | Metric | Baseline | Improved |
 |---|---|---|
-| context_recall | TBD | TBD |
-| context_precision | TBD | TBD |
-| faithfulness | TBD | TBD |
-| answer_relevancy | TBD | TBD |
+| context_recall | 1.000 | 1.000 |
+| context_precision (with reference) | 0.778 | **0.800** |
+| faithfulness | 1.000 | 0.876 |
+| answer_relevancy | 0.939 | **0.952** |
+
+Reading the table honestly: recall is saturated on a 3-document corpus (both pipelines
+find the right document). Precision and relevancy improve with hybrid+RRF+rerank and
+the EVIDENCE/ANALYSIS format. Faithfulness *drops* for the improved pipeline because
+the baseline "answers" are near-paraphrases of retrieved text (trivially faithful),
+while the CoT answers add derived reasoning steps (cross-source comparisons, rate
+calculations) that the RAGAS judge scores as not directly inferable from the context —
+the same trade-off flagged in the Block 1 lab. Raw scores: docs/ragas_results.json.
 
 ## 4. Security — before/after table (5 injection tests)
 
