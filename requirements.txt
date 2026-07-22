@@ -1,0 +1,5 @@
+python-dotenv
+requests
+mistralai<2
+mcp
+pytest

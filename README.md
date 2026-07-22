@@ -1,0 +1,105 @@
+# prodagent — renewable-energy research agent
+
+A production-ready research agent over a renewable-energy corpus (solar · wind · hydro):
+hybrid RAG + cross-encoder reranking, L1/L4 security guardrails, token budget,
+few-shot CoT with Self-Consistency k=3, a critic agent, an MCP server (stdio + HTTP),
+a FastAPI backend and a React TS frontend.
+
+> ⚠️ Transparency (EU AI Act, limited risk): every response is produced by an AI system.
+
+## Repository structure
+
+```
+src/        agent, retriever, guardrails, reasoning, critic, monitor, MCP server, eval
+tests/      test_security.py (5/5 injection) · test_mcp.py (3/3) · retriever · reasoning
+docs/       architecture.md (diagram + PEAS) · ragas_results.json
+data/       the 3 corpus documents (solar.md, wind.md, hydro.md)
+backend/    FastAPI app: /ask · /health · /metrics · /mcp (streamable HTTP)
+frontend/   React TS chat UI (Vite)
+```
+
+## Quickstart (from a clean clone)
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r backend/requirements.txt
+cp .env.example .env          # fill MISTRAL_API_KEY (TAVILY_API_KEY optional)
+
+pytest tests/                 # 32 tests, all offline — no key needed
+uvicorn backend.main:app --port 8000
+
+cd frontend && npm install && npm run dev   # UI on http://localhost:5173
+```
+
+Ask from the terminal without the UI:
+
+```bash
+python -c "from dotenv import load_dotenv; load_dotenv(); \
+from src.agent import run; print(run('Which renewable source is cheapest?')['answer'])"
+```
+
+## MCP server
+
+Three tools with full docstrings and error handling: `search_corpus`,
+`store_finding`, `recall_memory`.
+
+**Local (stdio) — any MCP client (Claude Desktop, Cursor, …):**
+
+```json
+{
+  "mcpServers": {
+    "prodagent": {
+      "command": "python",
+      "args": ["-m", "src.mcp_server"],
+      "cwd": "/path/to/prodagent"
+    }
+  }
+}
+```
+
+**Remote (streamable HTTP) — the deployed backend serves the same tools at `/mcp`,
+protected by `MCP_API_KEY`:**
+
+```
+https://prodagent-backend.onrender.com/mcp?key=<MCP_API_KEY>
+```
+
+Add that URL as a custom connector in Claude, or in any MCP client:
+
+```json
+{
+  "mcpServers": {
+    "prodagent-remote": {
+      "url": "https://prodagent-backend.onrender.com/mcp?key=<MCP_API_KEY>"
+    }
+  }
+}
+```
+
+Inspector: `npx @modelcontextprotocol/inspector python -m src.mcp_server`
+
+## Cost
+
+| Item | Price |
+|---|---|
+| mistral-large-latest | $2.00 / M input tokens · $6.00 / M output tokens |
+| Typical run (loop + k=3 synthesis + critic) | ≈ $0.03 |
+| Hard cap per run (`TokenBudget`) | $2.00 — the run raises and stops at the cap |
+| Warning threshold | 25% of the cap, printed after the crossing call |
+| Per-tool quotas | search_knowledge ≤ 5 · web_search ≤ 3 per run |
+
+## Deployment (Render)
+
+`render.yaml` is a Render Blueprint: one Python web service (backend + MCP) and one
+static site (frontend). Create a Blueprint on render.com pointing at this repo, then
+set `MISTRAL_API_KEY`, `TAVILY_API_KEY`, `MCP_API_KEY` in the backend service.
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`): backend job runs the full offline test
+suite (`LLM_PROVIDER=mock`); frontend job type-checks and builds the React app.
+
+## Report
+
+See [REPORT.md](REPORT.md): problem statement, architecture, RAGAS table,
+security before/after, EU AI Act tier, limitations, AI use declaration.
