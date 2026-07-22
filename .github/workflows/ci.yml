@@ -34,3 +34,19 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy (backend)
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+        run: |
+          if [ -n "$HOOK" ]; then curl -fsS "$HOOK"; else echo "RENDER_DEPLOY_HOOK_BACKEND not set — skipping"; fi
+      - name: Trigger Render deploy (frontend)
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
+        run: |
+          if [ -n "$HOOK" ]; then curl -fsS "$HOOK"; else echo "RENDER_DEPLOY_HOOK_FRONTEND not set — skipping"; fi
