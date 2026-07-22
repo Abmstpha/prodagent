@@ -1,4 +1,4 @@
-# prodagent — renewable-energy research agent
+# WattWise ⚡ — renewable-energy research agent (prodagent)
 
 A production-ready research agent over a renewable-energy corpus (solar · wind · hydro):
 hybrid RAG (BM25 + Pinecone dense + RRF) + cross-encoder reranking, L1/L4 security

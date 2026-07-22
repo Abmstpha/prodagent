@@ -37,7 +37,7 @@ async def lifespan(app):
         yield
 
 
-app = FastAPI(title="prodagent", version=agent.AGENT_VERSION["version"],
+app = FastAPI(title="WattWise (prodagent)", version=agent.AGENT_VERSION["version"],
               lifespan=lifespan)
 
 app.add_middleware(

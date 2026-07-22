@@ -1,4 +1,4 @@
-"""prodagent — secured, monitored agent loop.
+"""WattWise — secured, monitored renewable-energy research agent.
 
 Pipeline per run:
   L1 input filter -> tool loop (L4-gated, sanitised, budget-capped, max_steps)
@@ -18,7 +18,7 @@ from .tools import recall_memory, search_knowledge, store_finding, web_search
 DISCLOSURE = ("You are interacting with an AI research agent "
               "(EU AI Act limited-risk transparency notice).")
 
-SYSTEM_LOOP = """You are prodagent, a renewable-energy research agent. Your job in this \
+SYSTEM_LOOP = """You are WattWise, a renewable-energy research agent. Your job in this \
 phase is to GATHER EVIDENCE with tools — a separate synthesis step writes the final answer.
 
 ## Mission

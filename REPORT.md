@@ -1,4 +1,4 @@
-# REPORT.md
+# REPORT.md — WattWise (prodagent)
 
 ## 1. Problem statement
 

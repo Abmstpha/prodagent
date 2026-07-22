@@ -56,7 +56,7 @@ def extract_conclusion(text: str) -> str:
 
 
 def extract_confidence(text: str) -> str:
-    m = re.search(r"CONFIDENCE\s*:?\**\s*(HIGH|MEDIUM|LOW)", text, re.IGNORECASE)
+    m = re.search(r"CONFIDENCE[\s:*]*?(HIGH|MEDIUM|LOW)", text, re.IGNORECASE)
     return m.group(1).upper() if m else "UNKNOWN"
 
 

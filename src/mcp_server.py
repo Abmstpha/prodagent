@@ -1,4 +1,4 @@
-"""mcp_server.py — 3-tool MCP server for the renewable-energy research agent.
+"""mcp_server.py — 3-tool MCP server for WattWise, the renewable-energy research agent.
 
 Run standalone:  python -m src.mcp_server
 Inspect:         npx @modelcontextprotocol/inspector python -m src.mcp_server
@@ -13,7 +13,7 @@ except ImportError:                     # standalone mode (inspector, stdio clie
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from src.retriever import production_retrieve
 
-mcp = FastMCP("prodagent-tools")
+mcp = FastMCP("wattwise-tools")
 
 _MEMORY: dict[str, str] = {}
 
