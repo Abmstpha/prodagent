@@ -2,6 +2,8 @@
 import json
 import re
 
+from .tracing import traceable
+
 CRITIC_SYSTEM = """You are a critic agent. You receive a QUESTION, the CONTEXT the
 generator saw, and its ANSWER. Verify:
 1. Every EVIDENCE line is supported by the CONTEXT (no invented facts).
@@ -11,6 +13,7 @@ generator saw, and its ANSWER. Verify:
 Reply with JSON only: {"verdict": "APPROVED" or "REVISE", "reason": "<one sentence>"}"""
 
 
+@traceable(name="critic_review", run_type="chain")
 def review(client, question: str, context: str, answer: str, budget=None) -> dict:
     """One critic pass. Returns {"verdict": ..., "reason": ...}."""
     reply = client.complete(

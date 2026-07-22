@@ -8,6 +8,7 @@ import hashlib
 import time
 
 from .llm_helpers import ToolRegistry, make_client, tool_schema
+from .tracing import traceable
 from . import critic as critic_agent
 from .guardrails import TokenBudget, Verdict, l1_filter, l4_gate, sanitise_tool_result
 from .monitor import MONITOR
@@ -92,11 +93,13 @@ def build_registry() -> ToolRegistry:
     return registry
 
 
+@traceable(name="renewable_research_agent", run_type="chain")
 def run(question: str, k: int = 3, client=None, max_usd: float = 2.0) -> dict:
     """Answer a question. Returns a dict with answer, verdict, cost and trace metadata."""
     t0 = time.time()
 
-    verdict, value = l1_filter(question, strict=True)
+    check_input = traceable(name="L1_input_filter", run_type="chain")(l1_filter)
+    verdict, value = check_input(question, strict=True)
     if verdict == Verdict.BLOCKED:
         return {"answer": f"Request refused: {value}", "blocked": True,
                 "critic": {"verdict": "N/A", "reason": "blocked by L1"},
@@ -114,8 +117,10 @@ def run(question: str, k: int = 3, client=None, max_usd: float = 2.0) -> dict:
                 {"role": "user", "content": value}]
     gathered = []
 
+    gather_step = traceable(name="evidence_gathering_llm", run_type="llm")(
+        lambda msgs, tools: client.complete(msgs, tools=tools))
     for _ in range(MAX_STEPS):
-        reply = client.complete(messages, tools=registry.specs)
+        reply = gather_step(messages, registry.specs)
         if reply.usage:
             budget.record(model, reply.usage.get("input_tokens", 0),
                           reply.usage.get("output_tokens", 0))

@@ -64,7 +64,7 @@ def ragas_scores(rows: list) -> dict:
     result = evaluate(
         dataset=EvaluationDataset.from_list(rows),
         metrics=[LLMContextRecall(), LLMContextPrecisionWithReference(),
-                 Faithfulness(), ResponseRelevancy()],
+                 Faithfulness(), ResponseRelevancy(strictness=1)],  # Mistral caps n at 1
         llm=judge, embeddings=emb,
         run_config=RunConfig(max_workers=1, timeout=180, max_retries=10),
     )

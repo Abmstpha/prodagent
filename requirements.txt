@@ -3,3 +3,5 @@ requests
 mistralai<2
 mcp
 pytest
+langsmith
+pinecone

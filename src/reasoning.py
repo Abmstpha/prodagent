@@ -2,6 +2,8 @@
 import re
 from collections import Counter
 
+from .tracing import traceable
+
 SYSTEM_SYNTHESIS = """You are a research synthesis agent for renewable-energy questions.
 
 Performance measure:
@@ -81,6 +83,7 @@ def majority_vote(conclusions: list) -> tuple:
     return best[0], len(best)
 
 
+@traceable(name="self_consistency_synthesis", run_type="chain")
 def self_consistent_answer(client, question: str, context: str, k: int = 3,
                            budget=None, scripts=None) -> dict:
     """k independent reasoning chains at T=0.8, majority vote on the conclusion.
@@ -90,7 +93,8 @@ def self_consistent_answer(client, question: str, context: str, k: int = 3,
     answers = []
     for i in range(k):
         c = client if scripts is None else scripts[i]
-        reply = c.complete(
+        voice = traceable(name=f"reasoning_voice_{i + 1}", run_type="llm")(c.complete)
+        reply = voice(
             [{"role": "system", "content": SYSTEM_SYNTHESIS},
              {"role": "user", "content": f"CONTEXT:\n{context}\n\nQUESTION: {question}"}],
             temperature=0.8, max_tokens=1024,

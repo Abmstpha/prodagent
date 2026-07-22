@@ -4,10 +4,12 @@ import os
 import requests
 
 from .retriever import production_retrieve
+from .tracing import traceable
 
 _MEMORY: dict[str, str] = {}
 
 
+@traceable(name="search_knowledge", run_type="tool")
 def search_knowledge(query: str) -> str:
     """Search the local renewable-energy corpus (hybrid BM25+dense+RRF, reranked)."""
     try:
@@ -19,6 +21,7 @@ def search_knowledge(query: str) -> str:
         return f"search_knowledge error: {e}"
 
 
+@traceable(name="recall_memory", run_type="tool")
 def recall_memory(topic: str) -> str:
     """Recall findings stored earlier in this session."""
     try:
@@ -31,6 +34,7 @@ def recall_memory(topic: str) -> str:
         return f"recall_memory error: {e}"
 
 
+@traceable(name="store_finding", run_type="tool")
 def store_finding(finding: str, source: str) -> str:
     """Store a finding with its source in session memory."""
     try:
@@ -41,6 +45,7 @@ def store_finding(finding: str, source: str) -> str:
         return f"store_finding error: {e}"
 
 
+@traceable(name="web_search", run_type="tool")
 def web_search(query: str) -> str:
     """Web search via the Tavily API. Read-only; results are sanitised before use."""
     api_key = os.getenv("TAVILY_API_KEY")

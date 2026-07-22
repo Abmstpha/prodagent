@@ -109,10 +109,19 @@ def baseline_retrieve(query: str, k: int = 3) -> list:
 
 
 def production_retrieve(query: str, k_final: int = 3) -> list:
-    """Full pipeline: hybrid (dense+BM25+RRF) over children -> parents -> rerank."""
+    """Full pipeline: hybrid (dense+BM25+RRF) over children -> parents -> rerank.
+
+    Dense leg = Pinecone (llama-text-embed-v2) when PINECONE_API_KEY is set,
+    plus the local TF-IDF proxy — both fused; offline the local leg carries alone.
+    """
+    from .pinecone_dense import pinecone_search
     dense_c = _dense_children.search(query, k=10)
     bm25_c = _bm25_children.search(query, k=10)
-    fused_c = rrf_fusion([dense_c, bm25_c])
+    lists = [dense_c, bm25_c]
+    pinecone_c = pinecone_search(query, k=10)
+    if pinecone_c:
+        lists.append(pinecone_c)
+    fused_c = rrf_fusion(lists)
     seen, candidates = set(), []
     for text, _ in fused_c:
         child_id = next((cid for cid, ct in CHILDREN.items() if ct == text), None)
