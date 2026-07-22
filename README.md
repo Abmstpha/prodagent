@@ -7,6 +7,26 @@ a FastAPI backend and a React TS frontend.
 
 > ⚠️ Transparency (EU AI Act, limited risk): every response is produced by an AI system.
 
+## How a question flows
+
+```mermaid
+flowchart TD
+    U[User question] --> L1[L1 input filter<br/>NFKC + injection patterns]
+    L1 -- BLOCKED --> R[Request refused]
+    L1 -- CLEAN --> LOOP[Agent loop · max 6 steps<br/>mistral-large-latest]
+    LOOP -- tool call --> L4{L4 action gate<br/>SAFE / MONITOR / CONFIRM / BLOCK}
+    L4 -- allowed --> T[search_knowledge · recall_memory<br/>store_finding · web_search]
+    T --> SAN[sanitise_tool_result<br/>+ per-tool quotas]
+    SAN --> LOOP
+    LOOP -- DONE --> SC[Self-Consistency k=3<br/>few-shot CoT: EVIDENCE / ANALYSIS /<br/>CONCLUSION / CONFIDENCE]
+    SC --> CR{Critic agent}
+    CR -- APPROVED --> A[Answer + verdict + cost]
+    CR -- REVISE --> RG[One regeneration] --> CR
+    B[TokenBudget $2 hard cap] -.records every call.- LOOP
+    B -.-  SC
+    M[AgentMonitor<br/>cost · latency · error rate] -.- LOOP
+```
+
 ## Repository structure
 
 ```
